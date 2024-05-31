@@ -19,7 +19,7 @@ HEADLESS = True
 SAVE_LOGIN_STATE = True
 
 # 数据保存类型选项配置,支持三种类型：csv、db、json
-SAVE_DATA_OPTION = "json"  # csv or db or json
+SAVE_DATA_OPTION = "csv"  # csv or db or json
 
 # 用户浏览器缓存的浏览器文件配置
 USER_DATA_DIR = "%s_user_data_dir"  # %s will be replaced by platform name
@@ -72,4 +72,9 @@ WEIBO_SPECIFIED_ID_LIST = [
 XHS_CREATOR_ID_LIST = [
     "63e36c9a000000002703502b",
     # ........................
+]
+
+# 指定今日头条帖子列表
+JRTT_SPECIFIED_ID_LIST = [
+    ""
 ]

@@ -10,6 +10,7 @@ from media_platform.douyin import DouYinCrawler
 from media_platform.kuaishou import KuaishouCrawler
 from media_platform.weibo import WeiboCrawler
 from media_platform.xhs import XiaoHongShuCrawler
+from media_platform.jinritoutiao import JinritoutiaoCrawler
 
 
 class CrawlerFactory:
@@ -18,7 +19,8 @@ class CrawlerFactory:
         "dy": DouYinCrawler,
         "ks": KuaishouCrawler,
         "bili": BilibiliCrawler,
-        "wb": WeiboCrawler
+        "wb": WeiboCrawler,
+        "jrtt": JinritoutiaoCrawler
     }
 
     @staticmethod
@@ -33,7 +35,7 @@ async def main():
     # define command line params ...
     parser = argparse.ArgumentParser(description='Media crawler program.')
     parser.add_argument('--platform', type=str, help='Media platform select (xhs | dy | ks | bili | wb)',
-                        choices=["xhs", "dy", "ks", "bili", "wb"], default=config.PLATFORM)
+                        choices=["xhs", "dy", "ks", "bili", "wb", "jrtt"], default=config.PLATFORM)
     parser.add_argument('--lt', type=str, help='Login type (qrcode | phone | cookie)',
                         choices=["qrcode", "phone", "cookie"], default=config.LOGIN_TYPE)
     parser.add_argument('--type', type=str, help='crawler type (search | detail | creator)',
