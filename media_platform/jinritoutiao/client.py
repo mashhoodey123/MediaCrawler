@@ -4,12 +4,13 @@ Create File Time: 2024/5/27 15:20
 File Create By Author: Yang Guanqun
 Email: yangguanqunit@outlook.com
 '''
+import asyncio
 import copy
 import json
 import re
 
 import httpx
-from typing import Dict, Any, Optional, Callable
+from typing import Dict, Any, Optional, Callable, List
 from urllib.parse import urlencode
 from playwright.async_api import Page, BrowserContext
 
@@ -45,12 +46,12 @@ class JrttClient:
                 method, url, timeout=self.timeout,
                 **kwargs
             )
-        data: Dict = response.json()
-        if data.get("ok") != 1:
-            utils.logger.error(f"[JinritoutiaoClient.request] request {method}:{url} err, res:{data}")
-            raise DataFetchError(data.get("msg", "unkonw error"))
+        res: Dict = response.json()
+        if res.get("ok") != 1:
+            utils.logger.error(f"[JinritoutiaoClient.request] request {method}:{url} err, res:{res}")
+            raise DataFetchError(res.get("msg", "unkonw error"))
         else:
-            return data
+            return res
 
     # uri: uniform resource identifier  url: uniform resource locator  url 是一种具体的uri
     async def get(self, uri: str, params=None, headers=None) -> Dict:
@@ -89,15 +90,67 @@ class JrttClient:
         self.headers["Cookie"] = cookie_str
         self.cookie_dict = cookie_dict
 
-    async def get_note_all_comments(self, note_id: str):
+    async def get_note_all_comments(self, note_id: str, crawl_interval: float,
+                                    callback: Optional[Callable] = None):
         # get count of comments
-        comment_info = await self.get_note_comments(note_id, 0, 1)
-        total_comments = comment_info
+        comment_info = await self.get_note_comments(note_id, 0, 1, True)
+        assert 'total_number' in comment_info.keys(), "not contains total_number"
+        total_comments = comment_info['total_number']  # 文章总的评论数
+        count = 20
+        reply_count = 5
+        for _offset in range(0, total_comments, count):
+            batch_note_comments = await self.get_note_comments(note_id, _offset, count)
+            for note_comment in batch_note_comments:
+                comment_id = note_comment['id_str']  # 评论id
+                comment_text = note_comment['text']  # 评论的文本，如果只发图片的话，这一项就是空的
+                comment_user_id = note_comment['user_id']  # 发布评论的用户的id
+                comment_user_name = note_comment['user_name']  # 发布评论的用户的昵称
+                comment_user_location = note_comment['publish_loc_info']  # 发布评论的用户的定位
+                comment_reply_count = note_comment['reply_count']  # 回复评论的总数量
 
+                if len(comment_text) == 0: continue
+                comment_dict = {
+                    'type': utils.SaveType.COMMENT,
+                    'note_id': note_id,
+                    'comment_id': comment_id,
+                    'comment_user_id': comment_user_id,
+                    'comment_user_name': comment_user_name,
+                    'comment_user_location': comment_user_location,
+                    'text': comment_text
+                }
+                # 回复入库存储
+                if callback:
+                    callback([comment_dict])
 
+                reply_results = []
+                for comment_reply_offset in range(0, comment_reply_count, reply_count):
+                    batch_replies = await self.get_comment_all_replies(comment_id, comment_reply_offset, reply_count)
+                    for reply in batch_replies:
+                        reply_id = reply['id_str']  # 回复的id
+                        reply_text = reply['text']  # 回复的文本内容
+                        reply_content = reply['content']  # 回复的内容（可能含有图片？）
+                        reply_user_location = reply['publish_loc_info']  # 回复的用户的定位
+                        reply_user_id = reply['user']['user_id']  # 回复的用户的id
+                        reply_user_name = reply['user']['name']  # 回复的用户的昵称
 
+                        if len(reply_text) == 0: continue
+                        reply_dict = {
+                            'type': utils.SaveType.REPLY,
+                            'note_id': note_id,
+                            'comment_id': comment_id,
+                            'reply_id': reply_id,
+                            'reply_user_id': reply_user_id,
+                            'reply_user_name': reply_user_name,
+                            'reply_user_location': reply_user_location,
+                            'text': reply_text
+                        }
+                        reply_results.extend(reply_dict)
+                    await asyncio.sleep(crawl_interval)
+                # 回复入库存储
+                if callback:
+                    callback(reply_results)
 
-    async def get_note_comments(self, note_id: str, offset=0, count=20, init=False):
+    async def get_note_comments(self, note_id: str, offset=0, count=20, init=False) -> Dict:
         params = {
             "aid": "24",
             "app_name": "toutiao_web",
@@ -108,24 +161,26 @@ class JrttClient:
         }
         uri = self.comment_uri
         headers = self.headers
-        comments_res = await self.get(uri, params, headers)
+        comments = await self.get(uri, params, headers)
+        comments_data = comments['data']
         if init:
-            return comments_res
-        return comments_res
-
-
+            return comments
+        return comments_data
 
     async def get_comment_all_replies(self, comment_id: str, offset=0, count=5):
         params = {
             "aid": "24",
             "app_name": "toutiao_web",
-            "id": "7371978804346553123",
+            "id": f"{comment_id}",
             "offset": f"{offset}",
             "count": f"{count}",
             "repost": "0"
         }
-        pass
-
+        uri = self.reply_uri
+        headers = self.headers
+        replies = await self.get(uri, params, headers)
+        replies_data = replies['data']['data']
+        return replies_data
 
     async def get_note_info_by_id(self, note_id: str) -> Dict:
         url = f"{self._host}//{note_id}"

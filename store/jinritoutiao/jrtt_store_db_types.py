@@ -44,13 +44,15 @@ class JinritoutiaoNote(JinritoutiaoBaseModel):
 
 
 class JinritoutiaoComment(JinritoutiaoBaseModel):
+    note_id = fields.CharField(max_length=64, index=True, description="note id")  # 帖子id  index设置为True时，将为该字段创建数据库索引，这有助于加快查询速度
     comment_id = fields.CharField(max_length=64, index=True, description="comment id")  # 评论id
-    note_id = fields.CharField(max_length=64, index=True, description="note id")  # 帖子id
+    user_id = fields.CharField(max_length=64, description="user id")
+    user_name = fields.TextField(null=False, description="user name")
     content = fields.TextField(null=True, description="comment content")  # 评论内容
     create_time = fields.BigIntField(description="comment timestamp")  # 评论时间戳
-    create_data_time = fields.CharField(max_length=32, description="comment date", index=True)  # 评论日期 index 可能是按某种顺序存储？
-    comment_like_count = fields.CharField(max_length=16, description="like count")  # 评论点赞数
-    sub_comment_count = fields.CharField(max_length=16, description="sub comment count")  # 评论回复数
+    # create_data_time = fields.CharField(max_length=32, description="comment date", index=True)  # 评论日期 index 可能是按某种顺序存储？
+    # comment_like_count = fields.CharField(max_length=16, description="like count")  # 评论点赞数
+    # sub_comment_count = fields.CharField(max_length=16, description="sub comment count")  # 评论回复数
 
     class Meta:
         table = "jinritoutiao_note_comment"
@@ -58,3 +60,20 @@ class JinritoutiaoComment(JinritoutiaoBaseModel):
 
     def __str__(self):
         return f"{self.comment_id}"
+
+
+class JinritoutiaoReply(JinritoutiaoBaseModel):
+    note_id = fields.CharField(max_length=64, index=True, description="note id")
+    comment_id = fields.CharField(max_length=64, index=True, description="comment id")
+    reply_id = fields.CharField(max_length=64, index=True, description="reply id")
+    user_id = fields.CharField(max_length=64, description="user id")
+    user_name = fields.TextField(null=False, description="user name")
+    content = fields.TextField(null=True, description="reply content")
+    create_time = fields.BigIntField(description="reply timestamp")
+
+    class Meta:
+        table = "jinritoutiao_note_comment_reply"
+        table_description = "今日头条评论回复"
+
+    def __str__(self):
+        return f"{self.reply_id}"
