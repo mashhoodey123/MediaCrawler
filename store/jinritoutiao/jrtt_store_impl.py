@@ -105,11 +105,12 @@ class JinritoutiaoDbStoreImplement(AbstractStore):
 
         """
         from .jrtt_store_db_types import JinritoutiaoComment
-        comment_id = comment_item.get("comment_id")
+        comment_id = comment_item.get("comment_id", "")
+        assert comment_id != "", "[Error] comment id is None..."
         if not await JinritoutiaoComment.filter(comment_id=comment_id).exists():
             comment_item["add_ts"] = utils.get_current_timestamp()
             comment_pydantic = pydantic_model_creator(JinritoutiaoComment, name="JinrotoutiaoNoteCommentCreate",
-                                                      exclude=('id',))
+                                                      exclude=('id',))  # pydantic 库是 python 中用于数据接口定义检查与设置管理的库
             comment_data = comment_pydantic(**comment_item)
             comment_pydantic.model_validate(comment_data)
             await JinritoutiaoComment.create(**comment_data.model_dump())
@@ -119,3 +120,10 @@ class JinritoutiaoDbStoreImplement(AbstractStore):
             comment_data = comment_pydantic(**comment_item)
             comment_pydantic.model_validate(comment_data)
             await JinritoutiaoComment.filter(comment_id=comment_id).update(**comment_data.model_dump())
+
+    async def store_reply(self, reply_item: Dict):
+
+        from .jrtt_store_db_types import JinritoutiaoReply
+        reply_id = reply_item.get("reply_id", "")
+        assert reply_id != "", "[Error] reply id is None..."
+        pass

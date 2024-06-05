@@ -107,16 +107,19 @@ class JrttClient:
                 comment_user_name = note_comment['user_name']  # 发布评论的用户的昵称
                 comment_user_location = note_comment['publish_loc_info']  # 发布评论的用户的定位
                 comment_reply_count = note_comment['reply_count']  # 回复评论的总数量
+                comment_create_time = note_comment['create_time']  # 回复创建的时间
 
                 if len(comment_text) == 0: continue
                 comment_dict = {
                     'type': utils.SaveType.COMMENT,
                     'note_id': note_id,
                     'comment_id': comment_id,
-                    'comment_user_id': comment_user_id,
-                    'comment_user_name': comment_user_name,
-                    'comment_user_location': comment_user_location,
-                    'text': comment_text
+                    'user_id': comment_user_id,
+                    'user_name': comment_user_name,
+                    'ip_location': comment_user_location,
+                    'reply_count': comment_reply_count,
+                    'text': comment_text,
+                    'create_time': comment_create_time
                 }
                 # 回复入库存储
                 if callback:
@@ -128,10 +131,12 @@ class JrttClient:
                     for reply in batch_replies:
                         reply_id = reply['id_str']  # 回复的id
                         reply_text = reply['text']  # 回复的文本内容
-                        reply_content = reply['content']  # 回复的内容（可能含有图片？）
+                        # reply_content = reply['content']  # 回复的内容（可能含有图片？）
                         reply_user_location = reply['publish_loc_info']  # 回复的用户的定位
                         reply_user_id = reply['user']['user_id']  # 回复的用户的id
                         reply_user_name = reply['user']['name']  # 回复的用户的昵称
+                        reply_to = reply['reply_to_comment']['id_str']  # 回复的reply id
+                        reply_create_time = reply['create_time']
 
                         if len(reply_text) == 0: continue
                         reply_dict = {
@@ -139,9 +144,11 @@ class JrttClient:
                             'note_id': note_id,
                             'comment_id': comment_id,
                             'reply_id': reply_id,
-                            'reply_user_id': reply_user_id,
-                            'reply_user_name': reply_user_name,
-                            'reply_user_location': reply_user_location,
+                            'user_id': reply_user_id,
+                            'user_name': reply_user_name,
+                            'ip_location': reply_user_location,
+                            'create_time': reply_create_time,
+                            'reply_to': reply_to,
                             'text': reply_text
                         }
                         reply_results.extend(reply_dict)

@@ -31,40 +31,70 @@ class JinritoutiaostoreFactory:
 
 
 async def update_jinritoutiao_note(note_item: Dict):
-    blog: Dict = note_item.get("blog")
-    user_info: Dict = blog.get("user")
-    note_id = blog.get("id")
-    save_content_item = {
-        # blog info
-        "note_id": None,
+    note_id = note_item.get("note_id")
 
-        # user info
-        "user_id": None
+    local_db_item = {
+        "note_id": note_item.get("note_id"),
+        "type": note_item.get("type"),
+        "user_id": note_item.get("user_id"),
+        "user_name": note_item.get("user_name"),
+        "timestamp": note_item.get("create_time"),
+        "ip_location": note_item.get("ip_location"),
+        "content": note_item.get("text"),
+        "comment_count": note_item.get("comment_count")
     }
+
     utils.logger.info(
-        f"[store.jinritoutiao.udpate_jinritoutiao_note] jinritoutiao note id:{note_id}, title:{save_content_item.get('content')[:24]} ..."
+        f"[store.jinritoutiao.udpate_jinritoutiao_note] jinritoutiao note id: {note_id}, note: {local_db_item}"
     )
-    await JinritoutiaostoreFactory.create_store().store_content(content_item=save_content_item)
+    await JinritoutiaostoreFactory.create_store().store_content(local_db_item)
 
 
 async def batch_update_jinritoutiao_note_comments(note_id: str, comments: List[Dict]):
     if not comments:
         return
     for comment_item in comments:
-        pass
+        await update_jinritoutiao_note_comment(note_id, comment_item)
+
 
 async def update_jinritoutiao_note_comment(note_id: str, comment_item: Dict):
-    comment_id: str = str(comment_item.get("id"))
-    user_info: Dict = comment_item.get("user")
-    save_comment_item = {
-        # comment info
-        "comment_id": None,
-
-        # user info
-        "user_id": None
+    comment_id: str = str(comment_item.get("comment_id"))
+    # comment_pictures = [item.get("url_default", "") for item in comment_item.get("pictures", [])]
+    local_db_item = {
+        "comment_id": comment_id,
+        "note_id": note_id,
+        "type": comment_item.get("type"),
+        "user_id": comment_item.get("user_id"),
+        "user_name": comment_item.get("user_name"),
+        "ip_location": comment_item.get("ip_location"),
+        "create_time": comment_item.get("create_time"),
+        "reply_count": comment_item.get("reply_count"),
+        "content": comment_item.get("text")
     }
-    utils.logger.info(
-        f"[store.jinritoutiao.update_jinritoutiao_note_comment] Jinritoutiao note comment: {comment_id}, content: {save_comment_item.get('content', '')[:24]} ..."
-    )
-    await JinritoutiaostoreFactory.create_store().store_comment(comment_item=save_comment_item)
 
+    utils.logger.info(
+        f"[store.jinritoutiao.update_jinritoutiao_note_comment] Jinritoutiao note comment: {local_db_item}"
+    )
+    await JinritoutiaostoreFactory.create_store().store_comment(local_db_item)
+
+
+async def update_jinritoutiao_comment_reply(note_id, reply_item: Dict):
+    comment_id: str = str(reply_item.get("comment_id"))
+    reply_id: str = str(reply_item.get("reply_id"))
+    local_db_item = {
+        "reply_id": reply_id,
+        "note_id": note_id,
+        "comment_id": comment_id,
+        "type": reply_item.get("type"),
+        "user_id": reply_item.get("user_id"),
+        "user_name": reply_item.get("user_name"),
+        "ip_location": reply_item.get("ip_location"),
+        "create_time": reply_item.get("create_time"),
+        "reply_to": reply_item.get("reply_to"),
+        "content": reply_item.get("text")
+    }
+
+    # utils.logger.info(
+    #     f"[store.jinritoutiao.update_jinritoutiao_comment_reply] Jinritouriao comment reply"
+    # )
+    await JinritoutiaostoreFactory.create_store().store_comment(local_db_item)
