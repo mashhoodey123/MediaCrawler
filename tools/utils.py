@@ -3,6 +3,8 @@ import logging
 from .crawler_util import *
 from .slider_util import *
 from .time_util import *
+from enum import Enum
+
 
 
 def init_loging_config():
@@ -18,3 +20,9 @@ def init_loging_config():
 
 
 logger = init_loging_config()
+
+
+class SaveType(Enum):
+    DOCUMENT = "document"
+    COMMENT = "comment"
+    REPLY = "reply"
